@@ -1,3 +1,6 @@
+using System;
+using System.Runtime.InteropServices;
+
 namespace ZephyrRenderer.Mac
 {
     internal static class NSButtonWrapper
@@ -29,5 +32,5 @@ namespace ZephyrRenderer.Mac
             NativeMethods.objc_msgSend(button, setTargetSelector, target);
             NativeMethods.objc_msgSend(button, setActionSelector, actionSelector);
         }
-    }   
+    }
 }

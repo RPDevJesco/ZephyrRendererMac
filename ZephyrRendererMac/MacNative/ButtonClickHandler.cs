@@ -1,36 +1,32 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using ZephyrRenderer.UI;
 
 namespace ZephyrRenderer.Mac
 {
     internal static class ButtonClickHandler
     {
-        private static readonly Dictionary<IntPtr, Button> _buttonInstances = new Dictionary<IntPtr, Button>();
-
-        public static IntPtr Create(Button button)
-        {
-            IntPtr target = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(IntPtr)));
-            _buttonInstances[target] = button;
-            return target;
-        }
-
         private delegate void ButtonClickedDelegate(IntPtr self, IntPtr cmd);
 
-        private static readonly ButtonClickedDelegate ButtonClickedDelegateInstance = ButtonClicked;
+        public static event EventHandler ButtonClickedEvent;
 
-        private static void ButtonClicked(IntPtr target, IntPtr sender)
+        public static IntPtr Create()
         {
-            if (_buttonInstances.TryGetValue(target, out var button))
-            {
-                button.OnClick();
-            }
+            IntPtr classHandle = NativeMethods.objc_getClass("NSObject");
+            IntPtr instance = NativeMethods.objc_msgSend(classHandle, NativeMethods.sel_registerName("alloc"));
+            instance = NativeMethods.objc_msgSend(instance, NativeMethods.sel_registerName("init"));
+
+            ButtonClickedDelegate buttonClickedDelegate = ButtonClicked;
+            IntPtr buttonClickedSelector = NativeMethods.sel_registerName("buttonClicked:");
+            IntPtr imp = Marshal.GetFunctionPointerForDelegate(buttonClickedDelegate);
+            NativeMethods.class_addMethod(classHandle, buttonClickedSelector, imp, "v@:@");
+
+            return instance;
         }
 
-        public static IntPtr GetButtonClickedDelegate()
+        private static void ButtonClicked(IntPtr self, IntPtr cmd)
         {
-            return Marshal.GetFunctionPointerForDelegate(ButtonClickedDelegateInstance);
+            Console.WriteLine("Button clicked!");
+            ButtonClickedEvent?.Invoke(null, EventArgs.Empty);
         }
     }
 }
