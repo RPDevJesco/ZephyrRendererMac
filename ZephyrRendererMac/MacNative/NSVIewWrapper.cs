@@ -19,5 +19,11 @@ namespace ZephyrRenderer.Mac
             IntPtr addSubviewSelector = NativeMethods.sel_registerName("addSubview:");
             NativeMethods.objc_msgSend(view, addSubviewSelector, subview);
         }
+        
+        public static void RemoveSubview(IntPtr view, IntPtr subview)
+        {
+            IntPtr addSubviewSelector = NativeMethods.sel_registerName("removeSubview:");
+            NativeMethods.objc_msgSend(view, addSubviewSelector, subview);
+        }
     }
 }
