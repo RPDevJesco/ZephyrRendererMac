@@ -24,6 +24,7 @@ class Program
             // Create the first button
             var button1 = new Button();
             button1.CreateButton(50, 50, 200, 50, "Click Me");
+            button1.Click += (sender, e) => Console.WriteLine("First button clicked!");
             Console.WriteLine("First NSButton created and titled.");
 
             // Add the first button to the panel
@@ -33,6 +34,7 @@ class Program
             // Create the second button
             var button2 = new Button();
             button2.CreateButton(50, 150, 200, 50, "Another Button");
+            button2.Click += (sender, e) => Console.WriteLine("Second button clicked!");
             Console.WriteLine("Second NSButton created and titled.");
 
             // Add the second button to the panel

@@ -1,28 +1,36 @@
+using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using ZephyrRenderer.UI;
 
 namespace ZephyrRenderer.Mac
 {
     internal static class ButtonClickHandler
     {
-        private delegate void ButtonClickedDelegate(IntPtr self, IntPtr cmd);
+        private static readonly Dictionary<IntPtr, Button> _buttonInstances = new Dictionary<IntPtr, Button>();
 
-        public static IntPtr Create()
+        public static IntPtr Create(Button button)
         {
-            IntPtr classHandle = NativeMethods.objc_getClass("NSObject");
-            IntPtr instance = NativeMethods.objc_msgSend(classHandle, NativeMethods.sel_registerName("alloc"));
-            instance = NativeMethods.objc_msgSend(instance, NativeMethods.sel_registerName("init"));
-
-            ButtonClickedDelegate buttonClickedDelegate = ButtonClicked;
-            IntPtr buttonClickedSelector = NativeMethods.sel_registerName("buttonClicked:");
-            IntPtr imp = Marshal.GetFunctionPointerForDelegate(buttonClickedDelegate);
-            NativeMethods.class_addMethod(classHandle, buttonClickedSelector, imp, "v@:@");
-
-            return instance;
+            IntPtr target = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(IntPtr)));
+            _buttonInstances[target] = button;
+            return target;
         }
 
-        private static void ButtonClicked(IntPtr self, IntPtr cmd)
+        private delegate void ButtonClickedDelegate(IntPtr self, IntPtr cmd);
+
+        private static readonly ButtonClickedDelegate ButtonClickedDelegateInstance = ButtonClicked;
+
+        private static void ButtonClicked(IntPtr target, IntPtr sender)
         {
-            Console.WriteLine("Button clicked!");
+            if (_buttonInstances.TryGetValue(target, out var button))
+            {
+                button.OnClick();
+            }
+        }
+
+        public static IntPtr GetButtonClickedDelegate()
+        {
+            return Marshal.GetFunctionPointerForDelegate(ButtonClickedDelegateInstance);
         }
     }
 }
