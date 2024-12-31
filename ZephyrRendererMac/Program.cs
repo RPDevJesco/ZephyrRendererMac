@@ -15,40 +15,48 @@ class Program
             // Initialize NSApplication
             window.InitializeApp();
 
-            // Create a window
-            window.CreateWindow(100, 100, 400, 300);
+            // Create a larger window
+            window.CreateWindow(100, 100, 300, 400);
 
             // Create a panel and attach it to the window
-            using (var panel = new Panel(window.GetWindowHandle(), 0, 0, 400, 300))
+            using (var panel = new Panel(window.GetWindowHandle(), 0, 0, 1000, 800))
             {
                 Console.WriteLine("Panel created and added to NSWindow.");
 
-                // Create the first button
-                using (var button1 = new Button())
+                // Create bitmap renderer and custom view for drawing first (will be below)
+                using (var bitmapRenderer = new BitmapRenderer(window.GetWindowHandle()))
                 {
-                    button1.CreateButton(50, 50, 200, 50, "Click Me");
-                    button1.Click += (sender, e) => Console.WriteLine("First button clicked!");
-                    Console.WriteLine("First NSButton created and titled.");
+                    string imagePath = "/Users/jesseglover/Desktop/sexyvelma.jpg";
+                    Console.WriteLine($"Loading bitmap from {imagePath}");
+                    bitmapRenderer.LoadBitmap(imagePath);
 
-                    // Add the first button to the panel
-                    panel.AddChild(button1.GetButtonHandle());
-                    Console.WriteLine("First NSButton added to Panel.");
+                    // Create a large custom view for the image
+                    var customView = new CustomNSView(
+                        new CGRect(0, 20, 700, 700),  // Larger view area
+                        bitmapRenderer,
+                        0, 0);  // Start drawing at top-left of the view
+                    
+                    // Add image view below
+                    panel.AddChild(customView.Handle, false);
+
+                    // Create buttons on the left side (will be above)
+                    using (var button1 = new Button())
+                    {
+                        button1.CreateButton(20, 20, 200, 50, "Click Me");
+                        button1.Click += (sender, e) => Console.WriteLine("First button clicked!");
+                        panel.AddChild(button1.GetButtonHandle(), true);
+                    }
+
+                    using (var button2 = new Button())
+                    {
+                        button2.CreateButton(20, 90, 200, 50, "Another Button");
+                        button2.Click += (sender, e) => Console.WriteLine("Second button clicked!");
+                        panel.AddChild(button2.GetButtonHandle(), true);
+                    }
+
+                    // Start the NSApplication run loop
+                    window.Run();
                 }
-
-                // Create the second button
-                using (var button2 = new Button())
-                {
-                    button2.CreateButton(50, 150, 200, 50, "Another Button");
-                    button2.Click += (sender, e) => Console.WriteLine("Second button clicked!");
-                    Console.WriteLine("Second NSButton created and titled.");
-
-                    // Add the second button to the panel
-                    panel.AddChild(button2.GetButtonHandle());
-                    Console.WriteLine("Second NSButton added to Panel.");
-                }
-
-                // Start the NSApplication run loop
-                window.Run();
             }
 
             Console.WriteLine("Application started.");

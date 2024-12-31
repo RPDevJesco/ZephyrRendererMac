@@ -20,17 +20,18 @@ namespace ZephyrRenderer.UI
             _panelHandle = NSViewWrapper.Create(new CGRect(x, y, width, height));
             _children = new List<IntPtr>();
 
-            // Add the panel to the window
-            NSWindowWrapper.AddSubview(_windowHandle, _panelHandle);
+            // Add the panel to the window's content view
+            IntPtr contentView = NativeMethods.objc_msgSend(_windowHandle, NativeMethods.sel_registerName("contentView"));
+            NSViewWrapper.AddSubview(contentView, _panelHandle);
         }
 
-        public void AddChild(IntPtr childHandle)
+        public void AddChild(IntPtr childHandle, bool above = true)
         {
             if (childHandle == IntPtr.Zero)
                 throw new ArgumentException("Invalid child handle.");
 
             _children.Add(childHandle);
-            NSViewWrapper.AddSubview(_panelHandle, childHandle);
+            NSViewWrapper.AddSubviewPositioned(_panelHandle, childHandle, above);
         }
 
         public IntPtr GetPanelHandle()
@@ -56,7 +57,8 @@ namespace ZephyrRenderer.UI
                 // Dispose unmanaged resources
                 if (_panelHandle != IntPtr.Zero)
                 {
-                    NSViewWrapper.RemoveSubview(_windowHandle, _panelHandle);
+                    IntPtr contentView = NativeMethods.objc_msgSend(_windowHandle, NativeMethods.sel_registerName("contentView"));
+                    NSViewWrapper.RemoveSubview(contentView, _panelHandle);
                     _panelHandle = IntPtr.Zero;
                 }
 
