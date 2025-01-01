@@ -3,6 +3,19 @@ using System.Runtime.InteropServices;
 namespace ZephyrRenderer.Mac
 {
     [StructLayout(LayoutKind.Sequential)]
+    public struct CGPoint
+    {
+        public double X;
+        public double Y;
+
+        public CGPoint(double x, double y)
+        {
+            X = x;
+            Y = y;
+        }
+    }
+    
+    [StructLayout(LayoutKind.Sequential)]
     public struct CGSize
     {
         public double width;

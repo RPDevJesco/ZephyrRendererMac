@@ -49,15 +49,65 @@ namespace ZephyrRenderer.Mac
         [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
         public static extern CGSize objc_msgSend_CGSize(IntPtr receiver, IntPtr selector);
 
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_setBackground(IntPtr receiver, IntPtr selector, IntPtr color);
+        
         // Class creation and method adding
         [DllImport("/usr/lib/libobjc.A.dylib")]
         public static extern IntPtr objc_allocateClassPair(IntPtr superclass, string name, int extraBytes);
 
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_layerBacked(IntPtr receiver, IntPtr selector, bool backed);
+
+        // This one is specifically for needsDisplay and isFlipped boolean returns
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern bool objc_msgSend_bool_ret(IntPtr receiver, IntPtr selector);
+        
         [DllImport("/usr/lib/libobjc.A.dylib")]
         public static extern void objc_registerClassPair(IntPtr cls);
 
         [DllImport("/usr/lib/libobjc.A.dylib")]
         public static extern bool class_addMethod(IntPtr cls, IntPtr sel, IntPtr imp, string types);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend(IntPtr receiver, IntPtr selector, float r, float g, float b, float a);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_ulong(IntPtr receiver, IntPtr selector, ulong value);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend(IntPtr receiver, IntPtr selector, IntPtr arg1, IntPtr arg2, bool arg3);
+        
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern CGRect objc_msgSend_CGRect(IntPtr receiver, IntPtr selector);
+        
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern double objc_msgSend_Double(IntPtr receiver, IntPtr selector);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend_Font(IntPtr receiver, IntPtr selector, float size);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_Positioned(IntPtr receiver, IntPtr selector, IntPtr subview, int position, IntPtr relativeTo);
+
+        // Add this to the NativeMethods class:
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern ulong objc_msgSend_GetMask(IntPtr receiver, IntPtr selector);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_SetMask(IntPtr receiver, IntPtr selector, ulong value);
+        
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_Size(IntPtr receiver, IntPtr selector, CGSize size);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_Point(IntPtr receiver, IntPtr selector, CGPoint point);
+
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_Double(IntPtr receiver, IntPtr selector, double value);
+        
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern void objc_msgSend_setLineWidth(IntPtr receiver, IntPtr selector, double width);
 
         // Helper methods that use objc_msgSend internally
         public static IntPtr NSGraphicsContext_currentContext()

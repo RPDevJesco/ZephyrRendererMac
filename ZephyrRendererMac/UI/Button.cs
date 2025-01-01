@@ -9,7 +9,6 @@ namespace ZephyrRenderer.UI
         private IntPtr _buttonHandle;
         private IntPtr _targetHandle;
 
-        // Define the event for button clicks
         public event EventHandler Click;
 
         public Button()
@@ -19,10 +18,65 @@ namespace ZephyrRenderer.UI
 
         public void CreateButton(double x, double y, double width, double height, string title)
         {
-            _buttonHandle = InitializeButton(x, y, width, height, title);
+            Console.WriteLine($"Creating button at ({x}, {y}) with size {width}x{height}");
+            
+            IntPtr buttonClass = NativeMethods.objc_getClass("NSButton");
+            IntPtr allocSelector = NativeMethods.sel_registerName("alloc");
+            IntPtr initWithFrameSelector = NativeMethods.sel_registerName("initWithFrame:");
+            
+            _buttonHandle = NativeMethods.objc_msgSend(buttonClass, allocSelector);
+            var frame = new CGRect(x, y, width, height);
+            _buttonHandle = NativeMethods.objc_msgSend(_buttonHandle, initWithFrameSelector, frame);
+
+            if (_buttonHandle == IntPtr.Zero)
+            {
+                throw new Exception("Failed to create NSButton");
+            }
+
+            // Set button properties
+            SetButtonTitle(title);
+            SetButtonStyle();
+            
+            // Set up target/action
             _targetHandle = ButtonClickHandler.Create();
             NSButtonWrapper.SetTarget(_buttonHandle, _targetHandle, "buttonClicked:");
-            Console.WriteLine($"NSButton target and action set for button '{title}' at ({x}, {y}, {width}, {height}).");
+
+            // Enable layer-backed view
+            var setWantsLayerSelector = NativeMethods.sel_registerName("setWantsLayer:");
+            NativeMethods.objc_msgSend_bool(_buttonHandle, setWantsLayerSelector, true);
+
+            Console.WriteLine($"Button created successfully: {_buttonHandle}");
+        }
+
+        private void SetButtonTitle(string title)
+        {
+            var setTitleSelector = NativeMethods.sel_registerName("setTitle:");
+            
+            // Create NSString from title
+            var nsStringClass = NativeMethods.objc_getClass("NSString");
+            var stringWithUTF8StringSelector = NativeMethods.sel_registerName("stringWithUTF8String:");
+            var titleString = NativeMethods.objc_msgSend(nsStringClass, stringWithUTF8StringSelector, title);
+            
+            NativeMethods.objc_msgSend(_buttonHandle, setTitleSelector, titleString);
+
+            // Set font to system font size 13
+            var fontClass = NativeMethods.objc_getClass("NSFont");
+            var systemFontSelector = NativeMethods.sel_registerName("systemFontOfSize:");
+            var font = NativeMethods.objc_msgSend_Font(fontClass, systemFontSelector, 13.0f);
+            
+            var setFontSelector = NativeMethods.sel_registerName("setFont:");
+            NativeMethods.objc_msgSend(_buttonHandle, setFontSelector, font);
+        }
+
+        private void SetButtonStyle()
+        {
+            // Set bezel style to rounded
+            var setBezelStyleSelector = NativeMethods.sel_registerName("setBezelStyle:");
+            NativeMethods.objc_msgSend_ulong(_buttonHandle, setBezelStyleSelector, 1); // NSRoundedBezelStyle
+
+            // Set button type to momentary push in
+            var setButtonTypeSelector = NativeMethods.sel_registerName("setButtonType:");
+            NativeMethods.objc_msgSend_ulong(_buttonHandle, setButtonTypeSelector, 1); // NSMomentaryPushInButton
         }
 
         public IntPtr GetButtonHandle()
@@ -32,14 +86,6 @@ namespace ZephyrRenderer.UI
             return _buttonHandle;
         }
 
-        private IntPtr InitializeButton(double x, double y, double width, double height, string title)
-        {
-            var button = NSButtonWrapper.Create(new CGRect(x, y, width, height), title);
-            Console.WriteLine($"NSButton created and titled '{title}' at ({x}, {y}, {width}, {height}).");
-            return button;
-        }
-
-        // Method to be called by the ButtonClickHandler
         private void OnClick(object sender, EventArgs e)
         {
             Console.WriteLine($"Button.OnClick invoked for button '{GetButtonHandle()}'.");
@@ -48,12 +94,20 @@ namespace ZephyrRenderer.UI
 
         public void Dispose()
         {
+            ButtonClickHandler.ButtonClickedEvent -= OnClick;
+
             if (_targetHandle != IntPtr.Zero)
             {
                 Marshal.FreeHGlobal(_targetHandle);
                 _targetHandle = IntPtr.Zero;
             }
-            ButtonClickHandler.ButtonClickedEvent -= OnClick;
+
+            if (_buttonHandle != IntPtr.Zero)
+            {
+                var releaseSelector = NativeMethods.sel_registerName("release");
+                NativeMethods.objc_msgSend(_buttonHandle, releaseSelector);
+                _buttonHandle = IntPtr.Zero;
+            }
         }
     }
 }
