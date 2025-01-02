@@ -108,6 +108,9 @@ namespace ZephyrRenderer.Mac
         
         [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
         public static extern void objc_msgSend_setLineWidth(IntPtr receiver, IntPtr selector, double width);
+        
+        [DllImport("/usr/lib/libobjc.A.dylib", EntryPoint = "objc_msgSend")]
+        public static extern IntPtr objc_msgSend_HSBA(IntPtr receiver, IntPtr selector, float hue, float saturation, float brightness, float alpha);
 
         // Helper methods that use objc_msgSend internally
         public static IntPtr NSGraphicsContext_currentContext()

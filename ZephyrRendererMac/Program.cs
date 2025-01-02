@@ -153,12 +153,8 @@ public class AnimatedPanel : Panel
                 return;
             }
 
-            // Save graphics state
-            var colorClass = NativeMethods.objc_getClass("NSColor");
-            
-            // Set bright magenta background (should be very visible for debugging)
-            var magentaColor = NativeMethods.objc_msgSend(colorClass, NativeMethods.sel_registerName("magentaColor"));
-            NativeMethods.objc_msgSend(magentaColor, NativeMethods.sel_registerName("set"));
+            // Draw magenta background using hex color
+            NSColorWrapper.SetColorHex("#FF00FF"); // Magenta
             
             // Draw background using NSBezierPath
             var bezierClass = NativeMethods.objc_getClass("NSBezierPath");
@@ -168,8 +164,7 @@ public class AnimatedPanel : Panel
             Console.WriteLine("Drew magenta background");
 
             // Draw white circle for the ball
-            var whiteColor = NativeMethods.objc_msgSend(colorClass, NativeMethods.sel_registerName("whiteColor"));
-            NativeMethods.objc_msgSend(whiteColor, NativeMethods.sel_registerName("set"));
+            NSColorWrapper.SetColor(NSColorWrapper.White);
 
             var ballSize = 40.0;
             var ballRect = new CGRect(xPos, yPos - ballSize/2, ballSize, ballSize);
@@ -179,9 +174,8 @@ public class AnimatedPanel : Panel
             NativeMethods.objc_msgSend(circlePath, NativeMethods.sel_registerName("fill"));
             Console.WriteLine($"Drew white ball at ({ballRect.X}, {ballRect.Y})");
             
-            // Draw green border for debugging
-            var greenColor = NativeMethods.objc_msgSend(colorClass, NativeMethods.sel_registerName("greenColor"));
-            NativeMethods.objc_msgSend(greenColor, NativeMethods.sel_registerName("set"));
+            // Draw green border for debugging - using RGBA
+            NSColorWrapper.SetColorRGBA(0.0f, 1.0f, 0.0f); // Bright green
             
             var borderPath = NativeMethods.objc_msgSend(bezierClass, NativeMethods.sel_registerName("bezierPath"));
             NativeMethods.objc_msgSend(borderPath, NativeMethods.sel_registerName("appendBezierPathWithRect:"), dirtyRect);
@@ -201,9 +195,18 @@ public class AnimatedPanel : Panel
     private void SetupCustomDrawing()
     {
         Console.WriteLine($"Starting custom view setup at ({panelX}, {panelY}) with size {panelWidth}x{panelHeight}");
+        
         var className = "CustomAnimatedView";
         var baseClass = NativeMethods.objc_getClass("NSView");
 
+        var newClass = CreateCustomViewClass(baseClass, className);
+        var viewHandle = CreateCustomView(newClass);
+        ConfigureCustomView(viewHandle);
+        ReplaceExistingView(viewHandle);
+    }
+
+    private IntPtr CreateCustomViewClass(IntPtr baseClass, string className)
+    {
         var newClass = NativeMethods.objc_allocateClassPair(baseClass, className, 0);
 
         if (newClass == IntPtr.Zero)
@@ -213,26 +216,29 @@ public class AnimatedPanel : Panel
             {
                 throw new Exception("Failed to create or get CustomView class");
             }
-        }
-        else
-        {
-            // Add isFlipped method
-            var isFlippedPtr = Marshal.GetFunctionPointerForDelegate(new IsFlippedDelegate(() => true));
-            NativeMethods.class_addMethod(newClass, NativeMethods.sel_registerName("isFlipped"), isFlippedPtr, "B@:");
-
-            // Add drawRect: method
-            var drawRectPtr = Marshal.GetFunctionPointerForDelegate(drawRectHandler);
-            NativeMethods.class_addMethod(newClass, NativeMethods.sel_registerName("drawRect:"), drawRectPtr, "v@:{CGRect=dddd}");
-
-            // Register the class
-            NativeMethods.objc_registerClassPair(newClass);
+            return newClass;
         }
 
-        var currentHandle = GetPanelHandle();
-        
-        // Create new view
-        var viewHandle = NativeMethods.objc_msgSend(newClass, NativeMethods.sel_registerName("alloc"));
-        viewHandle = NativeMethods.objc_msgSend_Init(viewHandle, NativeMethods.sel_registerName("initWithFrame:"), 
+        // Add isFlipped method
+        var isFlippedPtr = Marshal.GetFunctionPointerForDelegate(new IsFlippedDelegate(() => true));
+        NativeMethods.class_addMethod(newClass, NativeMethods.sel_registerName("isFlipped"), 
+            isFlippedPtr, "B@:");
+
+        // Add drawRect: method
+        var drawRectPtr = Marshal.GetFunctionPointerForDelegate(drawRectHandler);
+        NativeMethods.class_addMethod(newClass, NativeMethods.sel_registerName("drawRect:"), 
+            drawRectPtr, "v@:{CGRect=dddd}");
+
+        // Register the class
+        NativeMethods.objc_registerClassPair(newClass);
+        return newClass;
+    }
+
+    private IntPtr CreateCustomView(IntPtr viewClass)
+    {
+        var viewHandle = NativeMethods.objc_msgSend(viewClass, NativeMethods.sel_registerName("alloc"));
+        viewHandle = NativeMethods.objc_msgSend_Init(viewHandle, 
+            NativeMethods.sel_registerName("initWithFrame:"), 
             new CGRect(panelX, panelY, panelWidth, panelHeight));
 
         if (viewHandle == IntPtr.Zero)
@@ -240,6 +246,11 @@ public class AnimatedPanel : Panel
             throw new Exception("Failed to create custom view");
         }
 
+        return viewHandle;
+    }
+
+    private void ConfigureCustomView(IntPtr viewHandle)
+    {
         // Enable layer backing and set opaque
         var setWantsLayerSelector = NativeMethods.sel_registerName("setWantsLayer:");
         NativeMethods.objc_msgSend_bool(viewHandle, setWantsLayerSelector, true);
@@ -247,30 +258,33 @@ public class AnimatedPanel : Panel
         var setOpaqueSelector = NativeMethods.sel_registerName("setOpaque:");
         NativeMethods.objc_msgSend_bool(viewHandle, setOpaqueSelector, true);
 
-        // Set background color
-        var colorClass = NativeMethods.objc_getClass("NSColor");
-        var colorSelector = NativeMethods.sel_registerName("colorWithDeviceRed:green:blue:alpha:");
-        var backgroundColor = NativeMethods.objc_msgSend(colorClass, colorSelector, 0.2f, 0.2f, 0.2f, 1.0f);
-        var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
-        NativeMethods.objc_msgSend(viewHandle, setBackgroundColorSelector, backgroundColor);
+        // Set background color using color wrapper
+        SetBackgroundColor(viewHandle, 0.2f, 0.2f, 0.2f); // Dark gray background
+        // Alternative: SetBackgroundColorHex(viewHandle, "#333333");
 
         // Set needs display
         var setNeedsDisplaySelector = NativeMethods.sel_registerName("setNeedsDisplay:");
         NativeMethods.objc_msgSend_bool(viewHandle, setNeedsDisplaySelector, true);
+    }
 
-        // Replace the old view
+    private void ReplaceExistingView(IntPtr newViewHandle)
+    {
+        var currentHandle = GetPanelHandle();
         var superview = GetParentHandle();
+
         if (superview != IntPtr.Zero)
         {
+            // Remove old view
             var removeFromSuperviewSelector = NativeMethods.sel_registerName("removeFromSuperview");
             NativeMethods.objc_msgSend(currentHandle, removeFromSuperviewSelector);
 
+            // Add new view
             var addSubviewSelector = NativeMethods.sel_registerName("addSubview:");
-            NativeMethods.objc_msgSend(superview, addSubviewSelector, viewHandle);
+            NativeMethods.objc_msgSend(superview, addSubviewSelector, newViewHandle);
         }
 
         // Update the handle
-        SetHandle(viewHandle);
+        SetHandle(newViewHandle);
     }
 
     private delegate bool IsFlippedDelegate();

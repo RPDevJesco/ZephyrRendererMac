@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using ZephyrRenderer.Mac;
 
+using System;
+using System.Collections.Generic;
+using ZephyrRenderer.Mac;
+
 public class Panel : IDisposable
 {
     private IntPtr _panelHandle;
@@ -34,20 +38,30 @@ public class Panel : IDisposable
             throw new Exception("Failed to create NSView");
         }
 
+        ConfigurePanel();
+        AddToParentView();
+    }
+
+    private void ConfigurePanel()
+    {
         // Set view to be layer-backed
         var setWantsLayerSelector = NativeMethods.sel_registerName("setWantsLayer:");
         NativeMethods.objc_msgSend_bool(_panelHandle, setWantsLayerSelector, true);
 
-        // Create a light gray color
-        var colorClass = NativeMethods.objc_getClass("NSColor");
-        var colorSelector = NativeMethods.sel_registerName("colorWithDeviceRed:green:blue:alpha:");
-        var color = NativeMethods.objc_msgSend(colorClass, colorSelector, 0.9f, 0.9f, 0.9f, 1.0f);
-        
-        // Set the background color
+        // Set background color using color wrapper
         var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
-        NativeMethods.objc_msgSend(_panelHandle, setBackgroundColorSelector, color);
+        var backgroundColor = NSColorWrapper.CreateColor(0.9f, 0.9f, 0.9f); // Light gray
+        NativeMethods.objc_msgSend(_panelHandle, setBackgroundColorSelector, backgroundColor);
 
-        // Add to window's content view
+        // You could also use hex color
+        // var backgroundColor = NSColorWrapper.CreateFromHex("#E6E6E6");
+        
+        // Or use a predefined color and lighten it
+        // var backgroundColor = NSColorWrapper.Lighten(NSColorWrapper.White, 0.1f);
+    }
+
+    private void AddToParentView()
+    {
         var contentView = GetParentHandle();
         if (contentView == IntPtr.Zero)
         {
@@ -78,7 +92,6 @@ public class Panel : IDisposable
 
     public IntPtr GetPanelHandle() => _panelHandle;
 
-    // Protected methods for derived classes
     protected IntPtr GetParentHandle()
     {
         var contentViewSelector = NativeMethods.sel_registerName("contentView");
@@ -113,6 +126,19 @@ public class Panel : IDisposable
         NativeMethods.objc_msgSend_Point(viewHandle, originSelector, point);
     }
 
+    protected void SetBackgroundColor(IntPtr viewHandle, float r, float g, float b, float a = 1.0f)
+    {
+        var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
+        var backgroundColor = NSColorWrapper.CreateColor(r, g, b, a);
+        NativeMethods.objc_msgSend(viewHandle, setBackgroundColorSelector, backgroundColor);
+    }
+
+    protected void SetBackgroundColorHex(IntPtr viewHandle, string hexColor)
+    {
+        var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
+        var backgroundColor = NSColorWrapper.CreateFromHex(hexColor);
+        NativeMethods.objc_msgSend(viewHandle, setBackgroundColorSelector, backgroundColor);
+    }
 
     protected virtual void Dispose(bool disposing)
     {
