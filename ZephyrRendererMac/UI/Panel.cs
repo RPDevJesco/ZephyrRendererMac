@@ -50,7 +50,8 @@ public class Panel : IDisposable
 
         // Set background color using color wrapper
         var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
-        var backgroundColor = NSColorWrapper.CreateColor(0.9f, 0.9f, 0.9f); // Light gray
+        var backgroundColor = NSColorWrapper.CreateColor(230, 230, 230, 1);
+        // Light gray
         NativeMethods.objc_msgSend(_panelHandle, setBackgroundColorSelector, backgroundColor);
 
         // You could also use hex color
@@ -126,10 +127,10 @@ public class Panel : IDisposable
         NativeMethods.objc_msgSend_Point(viewHandle, originSelector, point);
     }
 
-    protected void SetBackgroundColor(IntPtr viewHandle, float r, float g, float b, float a = 1.0f)
+    protected void SetBackgroundColor(IntPtr viewHandle, Color color, bool transparency)
     {
         var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
-        var backgroundColor = NSColorWrapper.CreateColor(r, g, b, a);
+        var backgroundColor = NSColorWrapper.CreateColor(51, 51, 51, 1);
         NativeMethods.objc_msgSend(viewHandle, setBackgroundColorSelector, backgroundColor);
     }
 

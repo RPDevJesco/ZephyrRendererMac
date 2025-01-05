@@ -1,89 +1,72 @@
-using System;
-using System.Drawing;
-
 namespace ZephyrRenderer.Mac
 {
-    public class NSColorWrapper
+public class NSColorWrapper
     {
         private static readonly IntPtr colorClass = NativeMethods.objc_getClass("NSColor");
-        
-        // Create color from RGBA values (0-1 range)
-        public static IntPtr CreateColor(float r, float g, float b, float a = 1.0f, bool allowTransparency = false)
+
+        // Create color from base Color object
+        public static IntPtr CreateColor(float r, float g, float b, float a)
         {
+            Color color = new Color(r, g, b, a);
+            color.ToMacOS();
             var colorSelector = NativeMethods.sel_registerName("colorWithDeviceRed:green:blue:alpha:");
-            var color = NativeMethods.objc_msgSend(colorClass, colorSelector, r, g, b, allowTransparency ? a : 1.0f);
-            return color;
+            return NativeMethods.objc_msgSend(colorClass, colorSelector, r, g, b, a );
         }
 
-        // Create color from hex string (#RRGGBB or #RRGGBBAA)
+        // Create color from hex string
         public static IntPtr CreateFromHex(string hexColor, bool allowTransparency = false)
         {
-            try
-            {
-                if (string.IsNullOrEmpty(hexColor))
-                    throw new ArgumentException("Hex color string cannot be null or empty");
+            var color = ParseHexToColor(hexColor);
+            // Convert the 0-255 values to 0-1 range for CreateColor
+            float r = color.Red / 255f;
+            float g = color.Green / 255f;
+            float b = color.Blue / 255f;
+            float a = color.Alpha / 255f;
 
-                // Remove # if present
-                hexColor = hexColor.TrimStart('#');
-
-                byte r, g, b, a = 255;
-
-                if (hexColor.Length == 6 || hexColor.Length == 8)
-                {
-                    r = Convert.ToByte(hexColor[..2], 16);
-                    g = Convert.ToByte(hexColor.Substring(2, 2), 16);
-                    b = Convert.ToByte(hexColor.Substring(4, 2), 16);
-
-                    if (hexColor.Length == 8)
-                    {
-                        a = Convert.ToByte(hexColor.Substring(6, 2), 16);
-                    }
-                }
-                else
-                {
-                    throw new ArgumentException("Hex color must be in #RRGGBB or #RRGGBBAA format");
-                }
-
-                // Convert to 0-1 range
-                return CreateColor(r / 255f, g / 255f, b / 255f, a / 255f, allowTransparency);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error creating color from hex: {ex.Message}");
-                return CreateColor(0, 0, 0); // Return black as fallback
-            }
+            return CreateColor(r, g, b, a);
         }
 
-        // Common predefined colors
-        public static IntPtr Black => CreateColor(0, 0, 0);
-        public static IntPtr White => CreateColor(1, 1, 1);
-        public static IntPtr Red => CreateColor(1, 0, 0);
-        public static IntPtr Green => CreateColor(0, 1, 0);
-        public static IntPtr Blue => CreateColor(0, 0, 1);
-        public static IntPtr Clear => CreateColor(0, 0, 0, 0, true);
-
-        // Set the current color for drawing
-        public static void SetColor(IntPtr color)
+        // Parse a hex string to a Color object
+        private static Color ParseHexToColor(string hexColor)
         {
-            if (color != IntPtr.Zero)
+            if (string.IsNullOrEmpty(hexColor))
+                throw new ArgumentException("Hex color string cannot be null or empty");
+
+            hexColor = hexColor.TrimStart('#');
+            byte r, g, b, a = 255;
+
+            if (hexColor.Length == 6 || hexColor.Length == 8)
             {
-                NativeMethods.objc_msgSend(color, NativeMethods.sel_registerName("set"));
+                r = Convert.ToByte(hexColor.Substring(0, 2), 16);
+                g = Convert.ToByte(hexColor.Substring(2, 2), 16);
+                b = Convert.ToByte(hexColor.Substring(4, 2), 16);
+
+                if (hexColor.Length == 8)
+                    a = Convert.ToByte(hexColor.Substring(6, 2), 16);
             }
+            else
+            {
+                throw new ArgumentException("Hex color must be in #RRGGBB or #RRGGBBAA format");
+            }
+
+            return new Color(r, g, b, a); // 0-255 range
         }
 
-        // Helper method to directly set color from RGBA
-        public static void SetColorRGBA(float r, float g, float b, float a = 1.0f, bool allowTransparency = false)
+
+        // Set color for drawing
+        public static void SetColor(Color color)
         {
-            var color = CreateColor(r, g, b, a, allowTransparency);
-            SetColor(color);
+            var nsColor = CreateColor(color.Red, color.Green, color.Blue, color.Alpha);
+            NativeMethods.objc_msgSend(nsColor, NativeMethods.sel_registerName("set"));
         }
 
-        // Helper method to directly set color from hex
-        public static void SetColorHex(string hexColor, bool allowTransparency = false)
-        {
-            var color = CreateFromHex(hexColor, allowTransparency);
-            SetColor(color);
-        }
+        // Predefined colors
+        public static IntPtr Black => CreateColor(0, 0, 0,1);
+        public static IntPtr White => CreateColor(255, 255, 255,1);
+        public static IntPtr Red => CreateColor(255, 0, 0,1);
+        public static IntPtr Green => CreateColor(0, 255, 0,1);
+        public static IntPtr Blue => CreateColor(0, 0, 255,1);
+        public static IntPtr Clear => CreateColor(0, 0, 0, 0);
 
         // Create a slightly darker version of a color
         public static IntPtr Darken(IntPtr color, float amount = 0.1f)

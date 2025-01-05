@@ -52,7 +52,7 @@ namespace ZephyrRenderer.Mac
 
         // Set background color using our color wrapper
         var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
-        var backgroundColor = NSColorWrapper.CreateColor(0.2f, 0.2f, 0.2f); // Dark gray
+        var backgroundColor = NSColorWrapper.CreateColor(51, 51, 51, 1); // Dark gray
         NativeMethods.objc_msgSend(window, setBackgroundColorSelector, backgroundColor);
     }
 
@@ -62,7 +62,7 @@ namespace ZephyrRenderer.Mac
         
         // Set content view background color
         var setBackgroundColorSelector = NativeMethods.sel_registerName("setBackgroundColor:");
-        var backgroundColor = NSColorWrapper.CreateColor(0.2f, 0.2f, 0.2f); // Match window color
+        var backgroundColor = NSColorWrapper.CreateColor(51, 51, 51, 1); // Match window color
         NativeMethods.objc_msgSend(contentView, setBackgroundColorSelector, backgroundColor);
 
         // Enable layer backing

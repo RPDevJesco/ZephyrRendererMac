@@ -154,7 +154,7 @@ public class AnimatedPanel : Panel
             }
 
             // Draw magenta background using hex color
-            NSColorWrapper.SetColorHex("#FF00FF"); // Magenta
+            NSColorWrapper.CreateFromHex("#FF00FF"); // Magenta
             
             // Draw background using NSBezierPath
             var bezierClass = NativeMethods.objc_getClass("NSBezierPath");
@@ -164,7 +164,7 @@ public class AnimatedPanel : Panel
             Console.WriteLine("Drew magenta background");
 
             // Draw white circle for the ball
-            NSColorWrapper.SetColor(NSColorWrapper.White);
+            NSColorWrapper.SetColor(new Color(1,1,1,1));
 
             var ballSize = 40.0;
             var ballRect = new CGRect(xPos, yPos - ballSize/2, ballSize, ballSize);
@@ -175,7 +175,7 @@ public class AnimatedPanel : Panel
             Console.WriteLine($"Drew white ball at ({ballRect.X}, {ballRect.Y})");
             
             // Draw green border for debugging - using RGBA
-            NSColorWrapper.SetColorRGBA(0.0f, 1.0f, 0.0f); // Bright green
+            NSColorWrapper.SetColor(new Color(0, 255, 0,1)); // Bright green
             
             var borderPath = NativeMethods.objc_msgSend(bezierClass, NativeMethods.sel_registerName("bezierPath"));
             NativeMethods.objc_msgSend(borderPath, NativeMethods.sel_registerName("appendBezierPathWithRect:"), dirtyRect);
@@ -259,7 +259,7 @@ public class AnimatedPanel : Panel
         NativeMethods.objc_msgSend_bool(viewHandle, setOpaqueSelector, true);
 
         // Set background color using color wrapper
-        SetBackgroundColor(viewHandle, 0.2f, 0.2f, 0.2f); // Dark gray background
+        SetBackgroundColor(viewHandle, new Color(51,51,51,1), false); // Dark gray background
         // Alternative: SetBackgroundColorHex(viewHandle, "#333333");
 
         // Set needs display
